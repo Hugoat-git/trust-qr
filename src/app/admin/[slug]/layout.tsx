@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   LogOut,
   Store,
+  Rocket,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -49,6 +50,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: `/admin/${slug}/settings`,
       icon: Settings,
       current: pathname === `/admin/${slug}/settings`,
+    },
+    {
+      name: 'Onboarding',
+      href: `/admin/${slug}/onboarding`,
+      icon: Rocket,
+      current: pathname === `/admin/${slug}/onboarding`,
     },
   ];
 
