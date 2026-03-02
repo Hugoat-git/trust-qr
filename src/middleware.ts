@@ -36,8 +36,8 @@ export async function middleware(request: NextRequest) {
 
   // Protéger les routes /admin/*
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    // Exclure la page de login
-    if (request.nextUrl.pathname === '/admin/login') {
+    // Exclure les pages de login et register
+    if (request.nextUrl.pathname === '/admin/login' || request.nextUrl.pathname === '/admin/register') {
       // Si déjà connecté, rediriger vers le dashboard
       if (user) {
         return NextResponse.redirect(new URL('/admin', request.url));
