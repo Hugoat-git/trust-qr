@@ -50,7 +50,7 @@ export function ResultScreen({ restaurant, result }: ResultScreenProps) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <Card>
+      <Card className="w-full border-0 shadow-none rounded-none bg-transparent">
         <CardContent className="py-8 text-center space-y-6">
           <motion.div
             initial={{ scale: 0 }}

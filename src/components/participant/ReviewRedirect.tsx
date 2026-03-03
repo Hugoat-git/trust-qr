@@ -59,7 +59,7 @@ export function ReviewRedirect({ restaurant, onDone }: ReviewRedirectProps) {
   // ── Pre-click: ask for review ──
   if (!hasClickedReview) {
     return (
-      <Card>
+      <Card className="w-full border-0 shadow-none rounded-none bg-transparent">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-2">
             <Star className="w-8 h-8 text-amber-500" />
@@ -106,7 +106,7 @@ export function ReviewRedirect({ restaurant, onDone }: ReviewRedirectProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="overflow-hidden">
+      <Card className="w-full overflow-hidden border-0 shadow-none rounded-none bg-transparent">
         {/* ── Prominent animated banner ── */}
         <div
           className="relative px-5 py-5 text-center overflow-hidden"

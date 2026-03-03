@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { QRLoader } from '@/components/ui/qr-loader';
 import { TrustQRLogo } from '@/components/ui/trustqr-logo';
+import { MobileNav } from '@/components/admin/mobile-nav';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-browser';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [hasLinkedQR, setHasLinkedQR] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -107,8 +109,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border">
+      {/* Sidebar — hidden on mobile */}
+      <div className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <Link href="/admin" className="flex items-center gap-2.5 h-16 px-6 border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors">
@@ -222,9 +224,79 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
 
+      {/* Mobile top header — visible only on mobile */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-sidebar border-b border-sidebar-border flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <TrustQRLogo size={22} className="text-primary" />
+          <span className="font-semibold text-sm text-foreground truncate max-w-[180px]">
+            {restaurant?.name ?? 'TrustQR'}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="w-8 h-8 rounded-full bg-primary/12 flex items-center justify-center ring-1 ring-primary/10"
+        >
+          <span className="text-xs font-semibold text-primary uppercase">
+            {userEmail ? userEmail[0] : '?'}
+          </span>
+        </button>
+      </header>
+
+      {/* Mobile user menu dropdown */}
+      {mobileMenuOpen && (
+        <>
+          <div className="md:hidden fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
+          <div className="md:hidden fixed top-14 right-4 left-4 z-50 p-1.5 bg-popover border border-border rounded-xl shadow-xl shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button
+              type="button"
+              onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setMobileMenuOpen(false); }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+            >
+              {mounted && theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {mounted && theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+            </button>
+            <button
+              type="button"
+              onClick={handleRedoOnboarding}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Revoir l'onboarding
+            </button>
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+            >
+              <Store className="w-4 h-4" />
+              Mes restaurants
+            </Link>
+            <Link
+              href={`/${slug}`}
+              target="_blank"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Voir la page publique
+            </Link>
+            <div className="my-1 border-t border-border" />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Déconnexion
+            </button>
+          </div>
+        </>
+      )}
+
       {/* Main content */}
-      <div className="pl-64">
-        <main className="p-8">
+      <div className="pl-0 md:pl-64">
+        <main className="p-4 md:p-8 pt-[calc(3.5rem+1rem)] md:pt-8 pb-20 md:pb-8">
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-32">
@@ -236,6 +308,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </Suspense>
         </main>
       </div>
+
+      <MobileNav navigation={navigation} />
     </div>
   );
 }

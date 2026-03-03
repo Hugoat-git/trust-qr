@@ -363,7 +363,7 @@ export function DashboardClient({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <div>
                       <span className="text-muted-foreground">Gain : </span>
                       <span className="font-semibold text-foreground">{foundVoucher.prize_label}</span>

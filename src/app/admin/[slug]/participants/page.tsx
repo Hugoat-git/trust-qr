@@ -56,7 +56,7 @@ export default async function ParticipantsPage({ params }: PageProps) {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">Participants</h1>
@@ -80,7 +80,7 @@ export default async function ParticipantsPage({ params }: PageProps) {
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full admin-table">
+            <table className="w-full min-w-[640px] admin-table">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left">

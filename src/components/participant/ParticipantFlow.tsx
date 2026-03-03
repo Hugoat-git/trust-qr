@@ -80,7 +80,7 @@ export function ParticipantFlow({ restaurant }: ParticipantFlowProps) {
 
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-center p-4"
+      className="min-h-screen flex flex-col items-center justify-center"
       style={cssVars}
     >
       <div className="w-full max-w-md">

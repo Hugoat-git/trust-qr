@@ -292,21 +292,21 @@ export function SettingsForm({ restaurant }: SettingsFormProps) {
               <Palette className="w-4 h-4" />
               Couleur principale
             </Label>
-            <div className="flex gap-3 items-center">
+            <div className="flex flex-wrap gap-3 items-center">
               <input
                 type="color"
                 id="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-12 h-12 rounded-lg cursor-pointer border-0"
+                className="w-12 h-12 rounded-lg cursor-pointer border-0 flex-shrink-0"
               />
               <Input
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-32"
+                className="w-32 flex-shrink-0"
               />
               <div
-                className="flex-1 h-12 rounded-lg flex items-center justify-center text-white font-medium"
+                className="flex-1 min-w-[80px] h-12 rounded-lg flex items-center justify-center text-white font-medium"
                 style={{ backgroundColor: primaryColor }}
               >
                 Aperçu
@@ -531,14 +531,14 @@ export function SettingsForm({ restaurant }: SettingsFormProps) {
               {prizes.map((prize, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-4 p-4 bg-muted rounded-lg"
+                  className="flex flex-wrap items-start gap-3 p-4 bg-muted rounded-lg"
                 >
                   <Input
                     value={prize.emoji}
                     onChange={(e) => handlePrizeChange(index, 'emoji', e.target.value)}
-                    className="w-16 text-center text-xl"
+                    className="w-14 text-center text-xl flex-shrink-0"
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-[100px]">
                     <Label className="text-xs text-muted-foreground">Réduction (%)</Label>
                     <Input
                       type="number"
@@ -548,7 +548,7 @@ export function SettingsForm({ restaurant }: SettingsFormProps) {
                       max={100}
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-[100px]">
                     <Label className="text-xs text-muted-foreground">Label</Label>
                     <Input
                       value={prize.label}
@@ -556,7 +556,7 @@ export function SettingsForm({ restaurant }: SettingsFormProps) {
                       placeholder="-10%"
                     />
                   </div>
-                  <div className="w-24">
+                  <div className="w-full sm:w-24">
                     <Label className="text-xs text-muted-foreground">Probabilité (%)</Label>
                     <Input
                       type="number"

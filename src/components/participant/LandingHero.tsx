@@ -131,8 +131,7 @@ function AnimatedCardPreview({ prizes, primaryColor }: { prizes: Prize[]; primar
                 }}
               >
                 <div className="text-center text-white">
-                  <Gift className="w-8 h-8 mx-auto opacity-80" />
-                  <span className="text-sm font-bold opacity-70 mt-1 block">?</span>
+                  <Gift className="w-6 h-6 mx-auto opacity-80" />
                 </div>
                 {/* Motif décoratif */}
                 <div className="absolute inset-2 rounded-lg border-2 border-white/20" />
@@ -146,8 +145,8 @@ function AnimatedCardPreview({ prizes, primaryColor }: { prizes: Prize[]; primar
                   transform: 'rotateY(180deg)',
                 }}
               >
-                <span className="text-3xl mb-1">{prize.emoji}</span>
-                <span className="text-lg font-bold text-gray-800">{prize.label}</span>
+                <span className="text-2xl mb-0.5">{prize.emoji}</span>
+                <span className="text-sm font-bold text-gray-800 leading-tight">{prize.label}</span>
               </div>
             </motion.div>
 
@@ -207,7 +206,7 @@ export function LandingHero({ restaurant, onStart }: LandingHeroProps) {
   , prizes[0]);
 
   return (
-    <Card className="text-center overflow-hidden">
+    <Card className="text-center overflow-hidden w-full border-0 shadow-none rounded-none bg-transparent">
       <CardContent className="pt-5 pb-5 space-y-3">
         {/* Logo du restaurant - plus petit */}
         {restaurant.logo_url ? (

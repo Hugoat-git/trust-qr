@@ -177,7 +177,7 @@ export function SpinWheel({
 
   if (error) {
     return (
-      <Card>
+      <Card className="w-full border-0 shadow-none rounded-none bg-transparent">
         <CardContent className="py-12 text-center space-y-4">
           <div className="text-red-500 text-5xl">😕</div>
           <p className="text-lg font-medium text-red-600">{error}</p>
@@ -190,7 +190,7 @@ export function SpinWheel({
   }
 
   return (
-    <Card className="overflow-hidden relative">
+    <Card className="w-full overflow-hidden relative border-0 shadow-none rounded-none bg-transparent">
       {showConfetti && <Confetti />}
 
       {/* Background glow */}
@@ -394,8 +394,7 @@ function PrizeCard({
           }}
         >
           <div className="text-center text-white">
-            <Gift className="w-8 h-8 mx-auto mb-1 opacity-90" />
-            <span className="text-sm font-bold opacity-80">?</span>
+            <Gift className="w-6 h-6 mx-auto opacity-90" />
           </div>
 
           {/* Decorative pattern */}
@@ -423,14 +422,14 @@ function PrizeCard({
           }}
         >
           <motion.span
-            className="text-3xl mb-1"
+            className="text-2xl mb-0.5"
             animate={isWinningCard ? { scale: [1, 1.2, 1] } : {}}
             transition={{ duration: 0.5, repeat: isWinningCard ? 3 : 0 }}
           >
             {actualPrize.emoji}
           </motion.span>
           <span
-            className="text-xl font-bold"
+            className="text-sm font-bold leading-tight"
             style={{ color: isWinningCard ? primaryColor : '#666' }}
           >
             {actualPrize.label}

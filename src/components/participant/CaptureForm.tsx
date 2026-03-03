@@ -50,7 +50,7 @@ export function CaptureForm({
   };
 
   return (
-    <Card>
+    <Card className="w-full border-0 shadow-none rounded-none bg-transparent">
       <CardHeader className="text-center">
         {onBack && (
           <button
