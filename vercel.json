@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/verify-reviews",
-      "schedule": "* * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }
