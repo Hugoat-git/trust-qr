@@ -2,38 +2,41 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://qr-fidelite.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://trustqr.dev'),
   title: {
-    default: "QR Fidélité - Fidélisez vos clients et boostez vos avis Google",
-    template: "%s | QR Fidélité",
+    default: "TrustQR - Fidélisez vos clients et boostez vos avis Google",
+    template: "%s | TrustQR",
   },
   description: "Collectez des avis Google, fidélisez vos clients avec des réductions gamifiées et construisez votre base CRM. Le tout via un simple QR code.",
   keywords: ["fidélité", "restaurant", "QR code", "avis Google", "CRM", "réductions", "gamification"],
-  authors: [{ name: "QR Fidélité" }],
-  creator: "QR Fidélité",
+  authors: [{ name: "TrustQR" }],
+  creator: "TrustQR",
   openGraph: {
     type: "website",
     locale: "fr_FR",
     url: "/",
-    siteName: "QR Fidélité",
-    title: "QR Fidélité - Fidélisez vos clients et boostez vos avis Google",
+    siteName: "TrustQR",
+    title: "TrustQR - Fidélisez vos clients et boostez vos avis Google",
     description: "Collectez des avis Google, fidélisez vos clients avec des réductions gamifiées et construisez votre base CRM.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "QR Fidélité",
+        alt: "TrustQR",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "QR Fidélité - Fidélisez vos clients",
+    title: "TrustQR - Fidélisez vos clients",
     description: "Collectez des avis Google et fidélisez vos clients avec des réductions gamifiées.",
     images: ["/og-image.png"],
   },
@@ -56,15 +59,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
-        {children}
-        <Toaster position="top-center" richColors />
+        <ThemeProvider>
+          {children}
+          <Toaster position="top-center" richColors />
+          <Analytics />
+          <SpeedInsights />
+        </ThemeProvider>
       </body>
     </html>
   );

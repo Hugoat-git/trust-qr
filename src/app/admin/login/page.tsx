@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
+import { QRLoader } from '@/components/ui/qr-loader';
+import { TrustQRLogo } from '@/components/ui/trustqr-logo';
 
 function LoginForm() {
   const router = useRouter();
@@ -26,21 +28,28 @@ function LoginForm() {
     try {
       const supabase = createClient();
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Timeout after 10s to avoid infinite loading on slow networks
+      const result = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 10000)
+        ),
+      ]);
 
-      if (error) {
-        toast.error(error.message || 'Email ou mot de passe incorrect');
+      if (result.error) {
+        toast.error(result.error.message || 'Email ou mot de passe incorrect');
         return;
       }
 
       toast.success('Connexion réussie !');
       router.push(redirectTo);
       router.refresh();
-    } catch {
-      toast.error('Une erreur est survenue');
+    } catch (err) {
+      if (err instanceof Error && err.message === 'timeout') {
+        toast.error('Connexion au serveur trop lente. Vérifiez votre connexion internet.');
+      } else {
+        toast.error('Erreur réseau. Vérifiez votre connexion internet.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +83,7 @@ function LoginForm() {
       </div>
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          <QRLoader size={16} className="mr-2" />
         ) : (
           <LogIn className="w-4 h-4 mr-2" />
         )}
@@ -86,19 +95,17 @@ function LoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-lg">QR</span>
-          </div>
+          <TrustQRLogo size={48} className="text-primary mx-auto mb-4" />
           <CardTitle className="text-2xl">Administration</CardTitle>
           <CardDescription>
             Connectez-vous pour accéder au tableau de bord
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<div className="h-40 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>}>
+          <Suspense fallback={<div className="h-40 flex items-center justify-center"><QRLoader size={24} /></div>}>
             <LoginForm />
           </Suspense>
         </CardContent>

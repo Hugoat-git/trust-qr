@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CardPreview } from '@/components/home/CardPreview';
+import { TrustQRLogo } from '@/components/ui/trustqr-logo';
 import {
   QrCode,
   Star,
@@ -140,10 +141,8 @@ export default function HomePage() {
       <header className="border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-sm z-50">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">QR</span>
-            </div>
-            <span className="font-semibold text-gray-900">QR Fidélité</span>
+            <TrustQRLogo size={28} className="text-primary" />
+            <span className="font-semibold text-gray-900">TrustQR</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#fonctionnalites" className="text-sm text-gray-600 hover:text-gray-900">
@@ -384,7 +383,7 @@ export default function HomePage() {
             Prêt à fidéliser vos clients ?
           </h2>
           <p className="mt-4 text-lg text-white/80">
-            Rejoignez les restaurants qui utilisent QR Fidélité pour booster leur réputation
+            Rejoignez les restaurants qui utilisent TrustQR pour booster leur réputation
           </p>
           <div className="mt-10">
             <Button asChild size="lg" variant="secondary" className="text-base">
@@ -402,10 +401,8 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                <span className="text-white font-bold text-xs">QR</span>
-              </div>
-              <span className="text-sm text-gray-600">QR Fidélité</span>
+              <TrustQRLogo size={24} className="text-primary" />
+              <span className="text-sm text-gray-600">TrustQR</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
               <Link href="/mentions-legales" className="hover:text-gray-900">
@@ -419,7 +416,7 @@ export default function HomePage() {
               </Link>
             </div>
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} QR Fidélité
+              © {new Date().getFullYear()} TrustQR
             </p>
           </div>
         </div>

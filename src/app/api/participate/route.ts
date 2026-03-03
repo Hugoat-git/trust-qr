@@ -1,8 +1,9 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendVoucherEmail } from '@/lib/mailgun';
+import { sendVoucherEmail } from '@/lib/email';
 import { weightedRandom, generateVoucherCode, getExpiryDate } from '@/lib/utils';
+import { verifyPendingReviews } from '@/lib/verify-reviews';
 import type { Prize } from '@/types';
 import type { Database } from '@/types/database';
 
@@ -11,7 +12,7 @@ type RestaurantRow = Database['public']['Tables']['restaurants']['Row'];
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { restaurantId, email, firstName, phone } = body;
+    const { restaurantId, email, firstName, phone, initialReviewCount, initialLatestReviewTime } = body;
 
     // 1. Valider les données
     if (!restaurantId || !email || !firstName) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     // 2. Récupérer le restaurant
     const { data, error: restaurantError } = await supabaseAdmin
       .from('restaurants')
-      .select('id, name, slug, logo_url, primary_color, prizes, voucher_validity_days, google_review_url')
+      .select('id, name, slug, logo_url, primary_color, prizes, voucher_validity_days, google_review_url, google_place_id')
       .eq('id', restaurantId)
       .eq('is_active', true)
       .single();
@@ -36,7 +37,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const restaurant = data as Pick<RestaurantRow, 'id' | 'name' | 'slug' | 'logo_url' | 'primary_color' | 'prizes' | 'voucher_validity_days' | 'google_review_url'>;
+    const restaurant = data as Pick<RestaurantRow, 'id' | 'name' | 'slug' | 'logo_url' | 'primary_color' | 'prizes' | 'voucher_validity_days' | 'google_review_url' | 'google_place_id'>;
+
+    // Déterminer si la vérification d'avis est activée
+    const reviewVerificationEnabled = restaurant.google_place_id && initialReviewCount >= 0;
+    const reviewStatus = reviewVerificationEnabled ? 'pending' : 'skipped';
 
     // 3. Vérifier si email existe déjà pour ce resto
     const { data: existingParticipant } = await supabaseAdmin
@@ -88,6 +93,10 @@ export async function POST(request: NextRequest) {
           voucher_expires_at: expiresAt.toISOString(),
           ip_address: ip,
           user_agent: userAgent,
+          review_status: reviewStatus,
+          initial_review_count: reviewVerificationEnabled ? initialReviewCount : null,
+          initial_latest_review_time: reviewVerificationEnabled ? (initialLatestReviewTime ?? null) : null,
+          review_clicked_at: new Date().toISOString(),
         },
       ])
       .select()
@@ -95,28 +104,32 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Insert error:', insertError);
+      console.error('Insert error details:', JSON.stringify(insertError, null, 2));
       return NextResponse.json(
-        { error: "Erreur lors de l'enregistrement" },
+        { error: `Erreur lors de l'enregistrement: ${insertError.message || insertError.code || 'unknown'}` },
         { status: 500 }
       );
     }
 
-    // 8. Envoyer l'email avec Mailgun
-    try {
-      await sendVoucherEmail({
-        to: email.toLowerCase().trim(),
-        firstName: firstName.trim(),
-        restaurantName: restaurant.name,
-        restaurantLogo: restaurant.logo_url,
-        primaryColor: restaurant.primary_color,
-        prizeLabel: wonPrize.label,
-        prizeEmoji: wonPrize.emoji,
-        voucherCode: voucherCode,
-        expiresAt: expiresAt.toISOString(),
-      });
-    } catch (emailError) {
-      // Log l'erreur mais ne bloque pas la participation
-      console.error('Email error (non-blocking):', emailError);
+    // 8. Envoyer l'email (seulement si vérification non activée)
+    // Si vérification activée, l'email sera envoyé par le CRON après vérification
+    if (reviewStatus === 'skipped') {
+      try {
+        await sendVoucherEmail({
+          to: email.toLowerCase().trim(),
+          firstName: firstName.trim(),
+          restaurantName: restaurant.name,
+          restaurantLogo: restaurant.logo_url,
+          primaryColor: restaurant.primary_color,
+          prizeLabel: wonPrize.label,
+          prizeEmoji: wonPrize.emoji,
+          voucherCode: voucherCode,
+          expiresAt: expiresAt.toISOString(),
+        });
+      } catch (emailError) {
+        // Log l'erreur mais ne bloque pas la participation
+        console.error('Email error (non-blocking):', emailError);
+      }
     }
 
     // 9. Optionnel: Trigger webhook n8n (pour intégrations CRM, etc.)
@@ -142,13 +155,18 @@ export async function POST(request: NextRequest) {
             participatedAt: new Date().toISOString(),
           }),
         });
-        console.log('Webhook n8n triggered successfully');
       } catch (webhookError) {
         console.error('Webhook n8n error (non-blocking):', webhookError);
       }
     }
 
-    // 10. Retourner résultat
+    // 10. Vérifier les avis en attente pour ce restaurant (non-bloquant)
+    // Cela permet de valider les participations précédentes sans CRON externe
+    verifyPendingReviews(restaurantId).catch(err => {
+      console.error('Background review verification error:', err);
+    });
+
+    // 11. Retourner résultat
     return NextResponse.json({
       success: true,
       participantId: participant?.id,
@@ -157,6 +175,7 @@ export async function POST(request: NextRequest) {
       prizeEmoji: wonPrize.emoji,
       voucherCode: voucherCode,
       expiresAt: expiresAt.toISOString(),
+      reviewStatus: reviewStatus,
     });
 
   } catch (error) {

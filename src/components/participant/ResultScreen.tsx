@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Calendar, Check, CheckCircle2, Copy, Mail } from "lucide-react";
+import { Calendar, Check, CheckCircle2, Copy, Mail, Clock, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ interface ResultData {
   prizeValue: number;
   voucherCode: string;
   expiresAt: string;
+  reviewStatus: 'pending' | 'verified' | 'expired' | 'skipped';
 }
 
 interface ResultScreenProps {
@@ -22,6 +23,7 @@ interface ResultScreenProps {
 
 export function ResultScreen({ restaurant, result }: ResultScreenProps) {
   const [copied, setCopied] = useState(false);
+  const isPending = result.reviewStatus === 'pending';
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -55,72 +57,87 @@ export function ResultScreen({ restaurant, result }: ResultScreenProps) {
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
           >
-            <CheckCircle2
-              className="w-16 h-16 mx-auto"
-              style={{ color: restaurant.primary_color }}
-            />
+            {isPending ? (
+              <Clock
+                className="w-16 h-16 mx-auto text-amber-500"
+              />
+            ) : (
+              <CheckCircle2
+                className="w-16 h-16 mx-auto text-primary"
+              />
+            )}
           </motion.div>
 
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold">Bravo !</h2>
-            <p className="text-gray-600">Vous avez gagné</p>
+            <h2 className="text-2xl font-bold">
+              {isPending ? "Félicitations !" : "Bravo !"}
+            </h2>
+            <p className="text-muted-foreground">Vous avez gagné</p>
           </div>
 
-          <div
-            className="text-5xl font-bold"
-            style={{ color: restaurant.primary_color }}
-          >
+          <div className="text-5xl font-bold text-primary">
+
             {result.prizeLabel}
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-            <p className="text-sm text-gray-500">Votre code de réduction</p>
-            <div className="flex items-center justify-center gap-2">
-              <code
-                className="text-2xl font-mono font-bold tracking-wider px-4 py-2 bg-white rounded border-2 border-dashed"
-                style={{ borderColor: restaurant.primary_color }}
-              >
-                {result.voucherCode}
-              </code>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyCode}
-                className="shrink-0"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </Button>
+          {isPending ? (
+            // Affichage en attente de vérification
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-center gap-2 text-amber-700">
+                <Loader2 className="w-5 h-5 text-amber-700 animate-spin" />
+                <span className="font-medium">Vérification en cours</span>
+              </div>
+              <p className="text-sm text-amber-600">
+                Votre code promo vous sera envoyé par email dès que votre avis Google sera vérifié.
+              </p>
+              <p className="text-xs text-amber-500">
+                Généralement sous 30 minutes
+              </p>
             </div>
-          </div>
+          ) : (
+            // Affichage normal avec code
+            <div className="bg-muted rounded-lg p-4 space-y-3">
+              <p className="text-sm text-muted-foreground">Votre code de réduction</p>
+              <div className="flex items-center justify-center gap-2">
+                <code
+                  className="text-2xl font-mono font-bold tracking-wider px-4 py-2 bg-white rounded border-2 border-dashed border-primary"
+                >
+                  {result.voucherCode}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyCode}
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
-          <div className="space-y-2 text-sm text-gray-500">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center justify-center gap-2">
               <Mail className="w-4 h-4" />
-              <span>Un email de confirmation vous a été envoyé</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>Valable jusqu'au {formatDate(result.expiresAt)}</span>
-            </div>
-          </div>
-
-          <div
-            className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4 text-sm"
-            style={{ borderLeft: `4px solid ${restaurant.primary_color}` }}
-          >
-            <p className="font-medium text-gray-700">
-              Présentez ce code en caisse lors de votre prochaine visite chez{" "}
-              <span style={{ color: restaurant.primary_color }}>
-                {restaurant.name}
+              <span>
+                {isPending
+                  ? "Vous recevrez votre code par email après vérification"
+                  : "Un email de confirmation vous a été envoyé"}
               </span>
-            </p>
+            </div>
+            {!isPending && (
+              <div className="flex items-center justify-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Valable jusqu'au {formatDate(result.expiresAt)}</span>
+              </div>
+            )}
           </div>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Merci de votre confiance et à très bientôt !
           </p>
         </CardContent>

@@ -46,73 +46,86 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* ===== Warm palette — TrustQR =====
+ * Inspired by Virtus dashboard: warm-dark with orange accent.
+ *
+ * DARK hierarchy (subtle elevation, warm undertones):
+ *   bg       #151413   — near-black, warm
+ *   sidebar  #1a1918   — slightly elevated from bg
+ *   card     #272523   — warm charcoal, clearly distinct from bg
+ *   muted    #201f1d   — recessed surfaces inside cards
+ *   border   #38342f   — warm, visible on cards
+ *
+ * LIGHT: clean warm white with cream accents
+ */
+
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f7f5f3;
+  --foreground: #141414;
+  --card: #ffffff;
+  --card-foreground: #141414;
+  --popover: #ffffff;
+  --popover-foreground: #141414;
+  --primary: #b55933;
+  --primary-foreground: #ffffff;
+  --secondary: #f0ebe7;
+  --secondary-foreground: #282828;
+  --muted: #f0ebe7;
+  --muted-foreground: #6b5e57;
+  --accent: #f0ebe7;
+  --accent-foreground: #282828;
+  --destructive: #dc2626;
+  --border: #e5ddd8;
+  --input: #e5ddd8;
+  --ring: #b55933;
+  --chart-1: #b55933;
+  --chart-2: #a1887d;
+  --chart-3: #4e4e4e;
+  --chart-4: #d4956b;
+  --chart-5: #8b6f64;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #141414;
+  --sidebar-primary: #b55933;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0ebe7;
+  --sidebar-accent-foreground: #282828;
+  --sidebar-border: #e5ddd8;
+  --sidebar-ring: #b55933;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #151413;
+  --foreground: #ede8e3;
+  --card: #282828;
+  --card-foreground: #ede8e3;
+  --popover: #282828;
+  --popover-foreground: #ede8e3;
+  --primary: #c4633d;
+  --primary-foreground: #ffffff;
+  --secondary: #201f1d;
+  --secondary-foreground: #ede8e3;
+  --muted: #201f1d;
+  --muted-foreground: #958a82;
+  --accent: #322f2c;
+  --accent-foreground: #ede8e3;
+  --destructive: #ef4444;
+  --border: #38342f;
+  --input: #38342f;
+  --ring: #c4633d;
+  --chart-1: #c4633d;
+  --chart-2: #a1887d;
+  --chart-3: #d4956b;
+  --chart-4: #8b6f64;
+  --chart-5: #5c5650;
+  --sidebar: #1a1918;
+  --sidebar-foreground: #ede8e3;
+  --sidebar-primary: #c4633d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #282828;
+  --sidebar-accent-foreground: #ede8e3;
+  --sidebar-border: #2c2a27;
+  --sidebar-ring: #c4633d;
 }
 
 @layer base {
@@ -121,7 +134,35 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* ===== Admin Table Styling ===== */
+.admin-table thead th {
+  @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+}
+
+.admin-table tbody tr {
+  @apply transition-colors;
+}
+
+/* ===== Subtle card glow on hover ===== */
+.card-hover {
+  @apply transition-all duration-200;
+}
+.card-hover:hover {
+  border-color: rgba(181, 89, 51, 0.15);
+  box-shadow: 0 0 0 1px rgba(181, 89, 51, 0.05);
+}
+
+/* ===== Shimmer animation for participant review banner ===== */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.animate-shimmer {
+  animation: shimmer 3s ease-in-out infinite;
 }
 
 /* Pour l'animation de retournement des cartes */
@@ -132,4 +173,80 @@
 
 .perspective-1000 {
   perspective: 1000px;
+}
+
+/* ===== QR Code Loader Animation ===== */
+.qr-loader {
+  width: 112px;
+  height: 112px;
+  position: relative;
+}
+
+.qr-box1,
+.qr-box2,
+.qr-box3 {
+  border: 16px solid var(--qr-loader-color, var(--muted-foreground));
+  box-sizing: border-box;
+  position: absolute;
+  display: block;
+}
+
+.qr-box1 {
+  width: 112px;
+  height: 48px;
+  margin-top: 64px;
+  margin-left: 0px;
+  animation: qr-abox1 4s 1s forwards ease-in-out infinite;
+}
+
+.qr-box2 {
+  width: 48px;
+  height: 48px;
+  margin-top: 0px;
+  margin-left: 0px;
+  animation: qr-abox2 4s 1s forwards ease-in-out infinite;
+}
+
+.qr-box3 {
+  width: 48px;
+  height: 48px;
+  margin-top: 0px;
+  margin-left: 64px;
+  animation: qr-abox3 4s 1s forwards ease-in-out infinite;
+}
+
+@keyframes qr-abox1 {
+  0% { width: 112px; height: 48px; margin-top: 64px; margin-left: 0px; }
+  12.5% { width: 48px; height: 48px; margin-top: 64px; margin-left: 0px; }
+  25% { width: 48px; height: 48px; margin-top: 64px; margin-left: 0px; }
+  37.5% { width: 48px; height: 48px; margin-top: 64px; margin-left: 0px; }
+  50% { width: 48px; height: 48px; margin-top: 64px; margin-left: 0px; }
+  62.5% { width: 48px; height: 48px; margin-top: 64px; margin-left: 0px; }
+  75% { width: 48px; height: 112px; margin-top: 0px; margin-left: 0px; }
+  87.5% { width: 48px; height: 48px; margin-top: 0px; margin-left: 0px; }
+  100% { width: 48px; height: 48px; margin-top: 0px; margin-left: 0px; }
+}
+
+@keyframes qr-abox2 {
+  0% { width: 48px; height: 48px; margin-top: 0px; margin-left: 0px; }
+  12.5% { width: 48px; height: 48px; margin-top: 0px; margin-left: 0px; }
+  25% { width: 48px; height: 48px; margin-top: 0px; margin-left: 0px; }
+  37.5% { width: 48px; height: 48px; margin-top: 0px; margin-left: 0px; }
+  50% { width: 112px; height: 48px; margin-top: 0px; margin-left: 0px; }
+  62.5% { width: 48px; height: 48px; margin-top: 0px; margin-left: 64px; }
+  75% { width: 48px; height: 48px; margin-top: 0px; margin-left: 64px; }
+  87.5% { width: 48px; height: 48px; margin-top: 0px; margin-left: 64px; }
+  100% { width: 48px; height: 48px; margin-top: 0px; margin-left: 64px; }
+}
+
+@keyframes qr-abox3 {
+  0% { width: 48px; height: 48px; margin-top: 0px; margin-left: 64px; }
+  12.5% { width: 48px; height: 48px; margin-top: 0px; margin-left: 64px; }
+  25% { width: 48px; height: 112px; margin-top: 0px; margin-left: 64px; }
+  37.5% { width: 48px; height: 48px; margin-top: 64px; margin-left: 64px; }
+  50% { width: 48px; height: 48px; margin-top: 64px; margin-left: 64px; }
+  62.5% { width: 48px; height: 48px; margin-top: 64px; margin-left: 64px; }
+  75% { width: 48px; height: 48px; margin-top: 64px; margin-left: 64px; }
+  87.5% { width: 48px; height: 48px; margin-top: 64px; margin-left: 64px; }
+  100% { width: 112px; height: 48px; margin-top: 64px; margin-left: 0px; }
 }

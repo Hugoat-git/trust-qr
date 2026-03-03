@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { QRLoader } from '@/components/ui/qr-loader';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -55,13 +56,13 @@ export function CaptureForm({
           <button
             type="button"
             onClick={onBack}
-            className="absolute left-4 top-4 text-gray-500 hover:text-gray-700"
+            className="absolute left-4 top-4 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
         )}
         <CardTitle className="text-xl">Vos coordonnées</CardTitle>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Pour recevoir votre bon de réduction
         </p>
       </CardHeader>
@@ -97,7 +98,7 @@ export function CaptureForm({
 
           <div className="space-y-2">
             <Label htmlFor="phone">
-              Téléphone <span className="text-gray-400">(optionnel)</span>
+              Téléphone <span className="text-muted-foreground">(optionnel)</span>
             </Label>
             <Input
               id="phone"
@@ -111,12 +112,11 @@ export function CaptureForm({
             type="submit"
             size="lg"
             className="w-full mt-6"
-            style={{ backgroundColor: restaurant.primary_color }}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <QRLoader size={16} className="mr-2" />
                 Chargement...
               </>
             ) : (
@@ -124,7 +124,7 @@ export function CaptureForm({
             )}
           </Button>
 
-          <p className="text-xs text-center text-gray-400 mt-4">
+          <p className="text-xs text-center text-muted-foreground mt-4">
             Vos données sont utilisées uniquement pour vous envoyer votre bon et
             ne seront jamais partagées.
           </p>

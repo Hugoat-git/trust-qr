@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Politique de confidentialité',
-  description: 'Politique de confidentialité de QR Fidélité',
+  description: 'Politique de confidentialité de TrustQR',
 };
 
 export default function ConfidentialitePage() {

@@ -265,8 +265,7 @@ export function LandingHero({ restaurant, onStart }: LandingHeroProps) {
         >
           <p className="font-medium text-gray-700 text-xs">Gagnez jusqu'à</p>
           <motion.p
-            className="text-2xl font-black"
-            style={{ color: restaurant.primary_color }}
+            className="text-2xl font-black text-primary"
             animate={{ scale: [1, 1.03, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -285,7 +284,6 @@ export function LandingHero({ restaurant, onStart }: LandingHeroProps) {
             onClick={onStart}
             size="lg"
             className="w-full text-lg py-6 relative overflow-hidden group"
-            style={{ backgroundColor: restaurant.primary_color }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >

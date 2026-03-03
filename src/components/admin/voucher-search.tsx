@@ -1,0 +1,265 @@
+'use client';
+
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import {
+  Search,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Ticket,
+  Loader2,
+  Gift,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
+} from 'lucide-react';
+
+interface VoucherInfo {
+  id: string;
+  voucher_code: string;
+  first_name: string;
+  email: string;
+  prize_label: string;
+  prize_value: number;
+  voucher_used: boolean;
+  voucher_used_at: string | null;
+  voucher_expires_at: string;
+  review_status: string;
+  created_at: string;
+}
+
+interface VoucherSearchProps {
+  slug: string;
+}
+
+export function VoucherSearch({ slug }: VoucherSearchProps) {
+  const [code, setCode] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [voucher, setVoucher] = useState<VoucherInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+
+    setIsSearching(true);
+    setError(null);
+    setVoucher(null);
+
+    try {
+      const response = await fetch(`/api/admin/voucher?slug=${slug}&code=${code.trim().toUpperCase()}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Voucher non trouve');
+        return;
+      }
+
+      setVoucher(data.voucher);
+    } catch {
+      setError('Erreur lors de la recherche');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleValidate = async () => {
+    if (!voucher) return;
+
+    setIsValidating(true);
+
+    try {
+      const response = await fetch('/api/admin/voucher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voucherId: voucher.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'Erreur lors de la validation');
+        return;
+      }
+
+      toast.success('Voucher valide avec succes !');
+      setVoucher({ ...voucher, voucher_used: true, voucher_used_at: new Date().toISOString() });
+    } catch {
+      toast.error('Erreur lors de la validation');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const isExpired = voucher && new Date(voucher.voucher_expires_at) < new Date();
+  const isReviewPending = voucher?.review_status === 'pending';
+  const isReviewExpired = voucher?.review_status === 'expired';
+  const canValidate = voucher && !voucher.voucher_used && !isExpired && !isReviewPending && !isReviewExpired;
+
+  return (
+    <div className="space-y-4">
+      {/* Search form */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Ticket className="w-5 h-5" />
+            Valider un voucher
+          </CardTitle>
+          <CardDescription>
+            Entrez le code a 8 caracteres du client
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <Input
+              placeholder="Ex: ABC12345"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className="flex-1 font-mono text-lg uppercase tracking-wider"
+              maxLength={8}
+            />
+            <Button type="submit" disabled={isSearching || !code.trim()}>
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+              <span className="ml-2">Chercher</span>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Error */}
+      {error && (
+        <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+              <XCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Result */}
+      {voucher && (
+        <Card className={voucher.voucher_used ? 'border-border bg-muted/50' : 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30'}>
+          <CardContent className="py-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Gift className="w-5 h-5 text-foreground" />
+                <span className="font-semibold text-foreground">Voucher trouvé</span>
+              </div>
+              {voucher.voucher_used ? (
+                <Badge variant="secondary">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Utilisé
+                </Badge>
+              ) : isExpired ? (
+                <Badge variant="destructive">
+                  <XCircle className="w-3 h-3 mr-1" />
+                  Expiré
+                </Badge>
+              ) : (
+                <Badge className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Valide
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Client</p>
+                <p className="font-medium text-foreground">{voucher.first_name}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Code</p>
+                <code className="font-mono font-bold text-foreground">{voucher.voucher_code}</code>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Réduction</p>
+                <p className="text-lg font-bold text-primary">{voucher.prize_label}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Expire le</p>
+                <p className="font-medium text-foreground">
+                  {new Date(voucher.voucher_expires_at).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-muted-foreground">Avis Google</p>
+                {voucher.review_status === 'verified' ? (
+                  <p className="font-medium text-green-600 flex items-center gap-1">
+                    <ShieldCheck className="w-4 h-4" /> Vérifié
+                  </p>
+                ) : voucher.review_status === 'pending' ? (
+                  <p className="font-medium text-amber-600 flex items-center gap-1">
+                    <ShieldAlert className="w-4 h-4" /> En attente de vérification
+                  </p>
+                ) : voucher.review_status === 'expired' ? (
+                  <p className="font-medium text-red-600 flex items-center gap-1">
+                    <ShieldX className="w-4 h-4" /> Non déposé à temps
+                  </p>
+                ) : (
+                  <p className="font-medium text-muted-foreground flex items-center gap-1">
+                    Non requis
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {voucher.voucher_used && voucher.voucher_used_at && (
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                Utilisé le{' '}
+                {new Date(voucher.voucher_used_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            )}
+
+            {!voucher.voucher_used && !isExpired && (
+              <div className="mt-4 pt-4 border-t space-y-2">
+                {(isReviewPending || isReviewExpired) && (
+                  <p className="text-sm text-amber-600 text-center">
+                    {isReviewPending
+                      ? "Le voucher ne peut pas être validé tant que l'avis Google n'est pas vérifié."
+                      : "Le voucher ne peut pas être validé car l'avis Google n'a pas été déposé à temps."}
+                  </p>
+                )}
+                <Button
+                  onClick={handleValidate}
+                  disabled={isValidating || !canValidate}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isValidating ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                  )}
+                  Valider ce voucher
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

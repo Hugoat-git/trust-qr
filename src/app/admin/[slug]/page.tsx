@@ -1,268 +1,194 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Ticket, Star, TrendingUp } from 'lucide-react';
+import { DashboardClient } from '@/components/admin/dashboard-client';
+import { InfoTooltip } from '@/components/admin/info-tooltip';
+import { FREE_PLAN_LIMIT } from '@/lib/branding';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-interface RestaurantData {
-  id: string;
-  name: string;
-  slug: string;
-  logo_url: string | null;
-  primary_color: string;
-}
-
-interface ParticipantData {
+interface ParticipantRow {
   id: string;
   prize_value: number;
   voucher_used: boolean;
   review_clicked_at: string | null;
+  review_status: string;
   created_at: string;
 }
 
-async function getRestaurantStats(slug: string) {
-  // Récupérer le restaurant
+interface PageViewRow {
+  step: string | null;
+  created_at: string;
+}
+
+interface QRCodeRow {
+  scan_count: number;
+}
+
+async function getDashboardData(slug: string) {
+  // Fetch restaurant
   const { data, error } = await supabaseAdmin
     .from('restaurants')
-    .select('id, name, slug, logo_url, primary_color')
+    .select('id, name, slug, logo_url, primary_color, google_place_id, initial_review_count, plan, confirmed_reviews_count')
     .eq('slug', slug)
     .single();
 
-  if (error || !data) {
-    return null;
-  }
+  if (error || !data) return null;
 
-  const restaurant = data as RestaurantData;
+  const restaurant = data as {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    primary_color: string;
+    google_place_id: string | null;
+    initial_review_count: number | null;
+    plan: string;
+    confirmed_reviews_count: number;
+  };
 
-  // Récupérer les statistiques
+  // Fetch participants
   const { data: participantsData } = await supabaseAdmin
     .from('participants')
-    .select('id, prize_value, voucher_used, review_clicked_at, created_at')
+    .select('id, prize_value, voucher_used, review_clicked_at, review_status, created_at')
     .eq('restaurant_id', restaurant.id);
 
-  const participants = (participantsData || []) as ParticipantData[];
+  const participants = (participantsData || []) as ParticipantRow[];
+
+  // Fetch page views
+  const { data: pageViewsData } = await supabaseAdmin
+    .from('page_views')
+    .select('step, created_at')
+    .eq('restaurant_id', restaurant.id);
+
+  const pageViews = (pageViewsData || []) as PageViewRow[];
+
+  // Fetch QR code scans
+  const { data: qrCodesData } = await supabaseAdmin
+    .from('qr_codes')
+    .select('scan_count')
+    .eq('restaurant_id', restaurant.id);
+
+  const qrCodes = (qrCodesData || []) as QRCodeRow[];
+
+  // === Compute stats ===
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  // Start of this week (Monday)
+  const thisWeekStart = new Date(now);
+  thisWeekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+  thisWeekStart.setHours(0, 0, 0, 0);
+
+  // Start of last week
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  // Start of this month
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const stats = {
     totalParticipants: participants.length,
-    vouchersUsed: participants.filter((p) => p.voucher_used).length,
-    reviewClicks: participants.filter((p) => p.review_clicked_at).length,
-    totalDiscountValue: participants.reduce((sum, p) => sum + (p.prize_value || 0), 0),
+    vouchersUsed: participants.filter(p => p.voucher_used).length,
+    reviewsVerified: participants.filter(p => p.review_status === 'verified').length,
+    reviewsPending: participants.filter(p => p.review_status === 'pending').length,
+    reviewsExpired: participants.filter(p => p.review_status === 'expired').length,
+    reviewsSkipped: participants.filter(p => p.review_status === 'skipped').length,
+    totalQRScans: qrCodes.reduce((sum, qr) => sum + qr.scan_count, 0),
+    participantsToday: participants.filter(p => p.created_at.startsWith(todayStr)).length,
+    participantsThisWeek: participants.filter(p => new Date(p.created_at) >= thisWeekStart).length,
+    participantsLastWeek: participants.filter(p => {
+      const d = new Date(p.created_at);
+      return d >= lastWeekStart && d < thisWeekStart;
+    }).length,
+    participantsThisMonth: participants.filter(p => new Date(p.created_at) >= thisMonthStart).length,
   };
 
-  // Statistiques par jour (7 derniers jours)
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
+  // === Participations by day (last 14 days) ===
+  const participationsByDay = Array.from({ length: 14 }, (_, i) => {
     const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    return date.toISOString().split('T')[0];
+    date.setDate(date.getDate() - (13 - i));
+    const dayStr = date.toISOString().split('T')[0];
+    return {
+      date: dayStr,
+      count: participants.filter(p => p.created_at.startsWith(dayStr)).length,
+    };
   });
 
-  const participationsByDay = last7Days.map((day) => ({
-    date: day,
-    count: participants.filter((p) => p.created_at.startsWith(day)).length,
+  // === Participations by month (last 6 months) ===
+  const participationsByMonth = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - (5 - i));
+    const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return {
+      date: monthStr,
+      count: participants.filter(p => p.created_at.startsWith(monthStr)).length,
+    };
+  });
+
+  // === Funnel data from page_views ===
+  const stepOrder = ['landing', 'form', 'review', 'spin', 'result'];
+  const stepLabels: Record<string, string> = {
+    landing: 'Page visitée',
+    form: 'Formulaire rempli',
+    review: 'Avis Google',
+    spin: 'Roue tournée',
+    result: 'Résultat affiché',
+  };
+
+  const funnelData = stepOrder.map(step => ({
+    step,
+    label: stepLabels[step] || step,
+    count: pageViews.filter(pv => pv.step === step).length,
   }));
 
-  return { restaurant, stats, participationsByDay };
+  return { restaurant, stats, participationsByDay, participationsByMonth, funnelData };
 }
 
 export default async function AdminDashboard({ params }: PageProps) {
   const { slug } = await params;
-  const data = await getRestaurantStats(slug);
+  const data = await getDashboardData(slug);
 
   if (!data) {
     notFound();
   }
 
-  const { restaurant, stats, participationsByDay } = data;
-
-  const statCards = [
-    {
-      title: 'Participants',
-      value: stats.totalParticipants,
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      title: 'Vouchers utilisés',
-      value: stats.vouchersUsed,
-      icon: Ticket,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      title: 'Clics avis Google',
-      value: stats.reviewClicks,
-      icon: Star,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
-    },
-    {
-      title: 'Valeur totale réductions',
-      value: `${stats.totalDiscountValue}%`,
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-  ];
-
-  const maxCount = Math.max(...participationsByDay.map((d) => d.count), 1);
+  const { restaurant, stats, participationsByDay, participationsByMonth, funnelData } = data;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Dashboard - {restaurant.name}
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Vue d'ensemble de votre campagne de fidélité
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <InfoTooltip
+            title="Vue d'ensemble"
+            description="Retrouvez ici toutes les statistiques clés de votre restaurant : participations, avis Google, taux de conversion et tendances."
+            tips={[
+              "Les avis Google sont mis à jour en temps réel",
+              "Validez vos vouchers dans la section 'Vérification rapide'",
+            ]}
+          />
+        </div>
+        <p className="text-muted-foreground mt-1">
+          Vue d'ensemble — {restaurant.name}
         </p>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">
-                    {stat.value}
-                  </p>
-                </div>
-                <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Participations (7 derniers jours)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-end gap-2">
-            {participationsByDay.map((day) => (
-              <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full flex flex-col items-center">
-                  <span className="text-sm font-medium text-gray-900 mb-1">
-                    {day.count}
-                  </span>
-                  <div
-                    className="w-full bg-primary/80 rounded-t-md transition-all"
-                    style={{
-                      height: `${(day.count / maxCount) * 180}px`,
-                      minHeight: day.count > 0 ? '20px' : '4px',
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-gray-500">
-                  {new Date(day.date).toLocaleDateString('fr-FR', {
-                    weekday: 'short',
-                  })}
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Taux de conversion */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Taux d'utilisation vouchers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="relative w-24 h-24">
-                <svg className="w-24 h-24 transform -rotate-90">
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#e5e7eb"
-                    strokeWidth="8"
-                    fill="none"
-                  />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#22c55e"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${(stats.vouchersUsed / Math.max(stats.totalParticipants, 1)) * 251.2} 251.2`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-xl font-bold">
-                  {stats.totalParticipants > 0
-                    ? Math.round((stats.vouchersUsed / stats.totalParticipants) * 100)
-                    : 0}
-                  %
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">
-                  {stats.vouchersUsed} vouchers utilisés sur {stats.totalParticipants}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Taux de clic avis Google</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="relative w-24 h-24">
-                <svg className="w-24 h-24 transform -rotate-90">
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#e5e7eb"
-                    strokeWidth="8"
-                    fill="none"
-                  />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#eab308"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${(stats.reviewClicks / Math.max(stats.totalParticipants, 1)) * 251.2} 251.2`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-xl font-bold">
-                  {stats.totalParticipants > 0
-                    ? Math.round((stats.reviewClicks / stats.totalParticipants) * 100)
-                    : 0}
-                  %
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">
-                  {stats.reviewClicks} clics sur {stats.totalParticipants} participants
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardClient
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.name}
+        primaryColor={restaurant.primary_color}
+        initialReviewCount={restaurant.initial_review_count}
+        plan={restaurant.plan}
+        confirmedReviewsCount={restaurant.confirmed_reviews_count}
+        stats={stats}
+        participationsByDay={participationsByDay}
+        participationsByMonth={participationsByMonth}
+        funnelData={funnelData}
+        slug={slug}
+      />
     </div>
   );
 }

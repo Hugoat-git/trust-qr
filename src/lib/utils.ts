@@ -26,6 +26,9 @@ export function generateVoucherCode(): string {
   return code;
 }
 
+// Meme format que generateVoucherCode, utilise pour les identifiants QR codes physiques
+export const generateQRCodeId = generateVoucherCode;
+
 export function getExpiryDate(days: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + days);

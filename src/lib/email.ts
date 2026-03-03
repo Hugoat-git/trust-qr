@@ -1,3 +1,9 @@
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const EMAIL_FROM = process.env.EMAIL_FROM || 'TrustQR <noreply@trustqr.dev>';
+
 interface SendEmailParams {
   to: string;
   subject: string;
@@ -5,54 +11,30 @@ interface SendEmailParams {
   text?: string;
 }
 
-interface MailgunResponse {
-  id: string;
-  message: string;
-}
-
-const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'sandboxa4174323d84043ab80b3f46713d7e5fa.mailgun.org';
-const MAILGUN_FROM = process.env.MAILGUN_FROM || `QR Fidélité <postmaster@${MAILGUN_DOMAIN}>`;
-const MAILGUN_BASE_URL = process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net';
-
-export async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<MailgunResponse | null> {
-  if (!MAILGUN_API_KEY) {
-    console.log('MAILGUN_API_KEY not configured, skipping email');
+export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log('RESEND_API_KEY not configured, skipping email');
     return null;
   }
 
   try {
-    const formData = new FormData();
-    formData.append('from', MAILGUN_FROM);
-    formData.append('to', to);
-    formData.append('subject', subject);
-    formData.append('html', html);
-    if (text) {
-      formData.append('text', text);
-    }
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to,
+      subject,
+      html,
+      text,
+    });
 
-    const response = await fetch(
-      `${MAILGUN_BASE_URL}/v3/${MAILGUN_DOMAIN}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${Buffer.from(`api:${MAILGUN_API_KEY}`).toString('base64')}`,
-        },
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Mailgun error:', response.status, errorText);
+    if (error) {
+      console.error('Resend error:', error);
       return null;
     }
 
-    const data = await response.json();
-    console.log('Email sent successfully:', data.id);
+    console.log('Email sent successfully:', data?.id);
     return data;
   } catch (error) {
-    console.error('Mailgun error:', error);
+    console.error('Resend error:', error);
     return null;
   }
 }
@@ -79,7 +61,7 @@ export async function sendVoucherEmail({
   prizeEmoji,
   voucherCode,
   expiresAt,
-}: VoucherEmailParams): Promise<MailgunResponse | null> {
+}: VoucherEmailParams) {
   const expiryDate = new Date(expiresAt).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -150,7 +132,7 @@ export async function sendVoucherEmail({
                 Présentez ce code en caisse lors de votre prochaine visite
               </p>
               <p style="color: #aaaaaa; font-size: 11px; margin: 0;">
-                Envoyé par QR Fidélité
+                Envoyé par TrustQR
               </p>
             </td>
           </tr>
@@ -182,6 +164,93 @@ Présentez ce code en caisse lors de votre prochaine visite.
   });
 }
 
+// Email d'upgrade quand le restaurant atteint la limite freemium
+interface UpgradeEmailParams {
+  to: string;
+  restaurantName: string;
+  slug: string;
+}
+
+export async function sendUpgradeEmail({
+  to,
+  restaurantName,
+  slug,
+}: UpgradeEmailParams) {
+  const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://trustqr.dev'}/admin/${slug}`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vous avez récupéré 6 avis Google !</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #b55933 0%, #a1887d 100%); padding: 40px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">
+                6 avis récupérés !
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px; text-align: center;">
+              <p style="color: #333333; font-size: 18px; margin: 0 0 16px 0; font-weight: 500;">
+                Félicitations !
+              </p>
+              <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                <strong>${restaurantName}</strong> a récupéré <strong>6 avis Google</strong> grâce à TrustQR.
+              </p>
+              <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                Passez au plan Pro pour continuer à améliorer votre réputation en ligne et attirer plus de clients.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="${adminUrl}" style="display: inline-block; background-color: #b55933; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                      Voir mon tableau de bord →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #fafafa; padding: 20px 30px; text-align: center; border-top: 1px solid #eeeeee;">
+              <p style="color: #aaaaaa; font-size: 11px; margin: 0;">
+                TrustQR
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+Félicitations ! ${restaurantName} a récupéré 6 avis Google grâce à TrustQR.
+
+Passez au plan Pro pour continuer à améliorer votre réputation en ligne.
+
+Voir votre tableau de bord : ${adminUrl}
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: '🎉 6 avis récupérés — Passez au plan Pro !',
+    html,
+    text,
+  });
+}
+
 // Email de bienvenue pour les restaurateurs
 interface WelcomeEmailParams {
   to: string;
@@ -195,8 +264,8 @@ export async function sendWelcomeEmail({
   restaurantName,
   slug,
   adminUrl,
-}: WelcomeEmailParams): Promise<MailgunResponse | null> {
-  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://qr-fidelite.vercel.app'}/${slug}`;
+}: WelcomeEmailParams) {
+  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://trustqr.dev'}/${slug}`;
 
   const html = `
 <!DOCTYPE html>
@@ -204,7 +273,7 @@ export async function sendWelcomeEmail({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bienvenue sur QR Fidélité</title>
+  <title>Bienvenue sur TrustQR</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
@@ -218,7 +287,7 @@ export async function sendWelcomeEmail({
                 <span style="font-size: 24px; font-weight: bold; color: #10b981;">QR</span>
               </div>
               <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">
-                Bienvenue sur QR Fidélité !
+                Bienvenue sur TrustQR !
               </h1>
             </td>
           </tr>
@@ -289,7 +358,7 @@ export async function sendWelcomeEmail({
                 Une question ? Répondez à cet email, nous sommes là pour vous aider.
               </p>
               <p style="color: #aaaaaa; font-size: 12px; margin: 0;">
-                © ${new Date().getFullYear()} QR Fidélité - Tous droits réservés
+                © ${new Date().getFullYear()} TrustQR - Tous droits réservés
               </p>
             </td>
           </tr>
@@ -302,7 +371,7 @@ export async function sendWelcomeEmail({
   `.trim();
 
   const text = `
-Bienvenue sur QR Fidélité !
+Bienvenue sur TrustQR !
 
 Félicitations pour la création de ${restaurantName} !
 
@@ -321,7 +390,7 @@ Une question ? Répondez à cet email, nous sommes là pour vous aider.
 
   return sendEmail({
     to,
-    subject: '🎉 Bienvenue sur QR Fidélité - Votre compte est prêt !',
+    subject: '🎉 Bienvenue sur TrustQR - Votre compte est prêt !',
     html,
     text,
   });

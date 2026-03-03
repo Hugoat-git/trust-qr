@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ParticipantFlow } from "@/components/participant/ParticipantFlow";
 import { supabase } from "@/lib/supabase";
+import { FREE_PLAN_LIMIT } from "@/lib/branding";
 import type { Database } from "@/types/database";
 
 interface PageProps {
@@ -25,6 +26,11 @@ export default async function RestaurantPage({ params }: PageProps) {
 
   const restaurant = data as RestaurantRow;
 
+  // Bloquer si le restaurant a atteint la limite freemium
+  if (restaurant.plan === 'free' && restaurant.confirmed_reviews_count >= FREE_PLAN_LIMIT) {
+    notFound();
+  }
+
   // Parse prizes (stocké en JSONB)
   const restaurantWithPrizes = {
     id: restaurant.id,
@@ -37,6 +43,11 @@ export default async function RestaurantPage({ params }: PageProps) {
     voucher_validity_days: restaurant.voucher_validity_days,
     crm_type: restaurant.crm_type,
     crm_webhook_url: restaurant.crm_webhook_url,
+    user_id: restaurant.user_id,
+    plan: restaurant.plan,
+    stripe_customer_id: restaurant.stripe_customer_id,
+    stripe_subscription_id: restaurant.stripe_subscription_id,
+    confirmed_reviews_count: restaurant.confirmed_reviews_count,
     is_active: restaurant.is_active,
     created_at: restaurant.created_at,
     updated_at: restaurant.updated_at,

@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthUser } from '@/lib/auth';
 
 interface VoucherData {
   id: string;
@@ -12,6 +13,7 @@ interface VoucherData {
   voucher_used: boolean;
   voucher_used_at: string | null;
   voucher_expires_at: string;
+  review_status: string;
   created_at: string;
 }
 
@@ -19,11 +21,15 @@ interface ParticipantCheck {
   id: string;
   voucher_used: boolean;
   voucher_expires_at: string;
+  review_status: string;
 }
 
 // GET - Rechercher un voucher par code
 export async function GET(request: NextRequest) {
   try {
+    const user = await getAuthUser();
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const slug = searchParams.get('slug');
     const code = searchParams.get('code');
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Rechercher le voucher
     const { data: participantData, error: participantError } = await supabaseAdmin
       .from('participants')
-      .select('id, voucher_code, first_name, email, prize_label, prize_value, voucher_used, voucher_used_at, voucher_expires_at, created_at')
+      .select('id, voucher_code, first_name, email, prize_label, prize_value, voucher_used, voucher_used_at, voucher_expires_at, review_status, created_at')
       .eq('restaurant_id', restaurant.id)
       .eq('voucher_code', code.toUpperCase())
       .single();
@@ -81,6 +87,9 @@ export async function GET(request: NextRequest) {
 // POST - Valider un voucher
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser();
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
     const body = await request.json();
     const { voucherId } = body;
 
@@ -94,7 +103,7 @@ export async function POST(request: NextRequest) {
     // Vérifier que le voucher existe et n'est pas déjà utilisé
     const { data: participantData, error: fetchError } = await supabaseAdmin
       .from('participants')
-      .select('id, voucher_used, voucher_expires_at')
+      .select('id, voucher_used, voucher_expires_at, review_status')
       .eq('id', voucherId)
       .single();
 
@@ -117,6 +126,20 @@ export async function POST(request: NextRequest) {
     if (new Date(participant.voucher_expires_at) < new Date()) {
       return NextResponse.json(
         { error: 'Ce voucher a expiré' },
+        { status: 400 }
+      );
+    }
+
+    if (participant.review_status === 'pending') {
+      return NextResponse.json(
+        { error: 'L\'avis Google n\'a pas encore été vérifié' },
+        { status: 400 }
+      );
+    }
+
+    if (participant.review_status === 'expired') {
+      return NextResponse.json(
+        { error: 'L\'avis Google n\'a pas été déposé à temps' },
         { status: 400 }
       );
     }

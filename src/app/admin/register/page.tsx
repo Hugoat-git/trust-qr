@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, UserPlus, Mail } from 'lucide-react';
+import { UserPlus, Mail } from 'lucide-react';
+import { TrustQRLogo } from '@/components/ui/trustqr-logo';
+import { QRLoader } from '@/components/ui/qr-loader';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,7 +43,7 @@ export default function RegisterPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/admin`,
         },
       });
 
@@ -72,7 +74,7 @@ export default function RegisterPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
         },
       });
 
@@ -87,13 +89,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Link href="/" className="inline-block">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-lg">QR</span>
-            </div>
+          <Link href="/" className="inline-block mx-auto mb-4">
+            <TrustQRLogo size={48} className="text-primary" />
           </Link>
           <CardTitle className="text-2xl">Créer un compte</CardTitle>
           <CardDescription>
@@ -110,7 +110,7 @@ export default function RegisterPage() {
             disabled={isGoogleLoading || isLoading}
           >
             {isGoogleLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <QRLoader size={16} className="mr-2" />
             ) : (
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path
@@ -139,7 +139,7 @@ export default function RegisterPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Ou avec email</span>
+              <span className="bg-card px-2 text-muted-foreground">Ou avec email</span>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ export default function RegisterPage() {
             </div>
             <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <QRLoader size={16} className="mr-2" />
               ) : (
                 <UserPlus className="w-4 h-4 mr-2" />
               )}
@@ -193,14 +193,14 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-muted-foreground">
             Déjà un compte ?{' '}
             <Link href="/admin/login" className="text-primary hover:underline font-medium">
               Se connecter
             </Link>
           </p>
 
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-muted-foreground">
             En créant un compte, vous acceptez nos{' '}
             <Link href="/cgv" className="underline">CGV</Link> et{' '}
             <Link href="/confidentialite" className="underline">Politique de confidentialité</Link>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Restaurant, Prize } from '@/types';
 import { toast } from 'sonner';
-import { Loader2, Gift, Sparkles, Hand } from 'lucide-react';
+import { Gift, Sparkles, Hand, Loader2 } from 'lucide-react';
 import Confetti from './Confetti';
 
 interface ParticipationData {
@@ -19,22 +19,28 @@ interface ResultData {
   prizeValue: number;
   voucherCode: string;
   expiresAt: string;
+  reviewStatus: 'pending' | 'verified' | 'expired' | 'skipped';
 }
 
 interface SpinWheelProps {
   restaurant: Restaurant;
   participationData: ParticipationData;
+  initialReviewCount: number;
+  initialLatestReviewTime: number | null;
   onComplete: (result: ResultData) => void;
 }
 
-// Helper function
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const CARD_COUNT = 6;
+
 export function SpinWheel({
   restaurant,
   participationData,
+  initialReviewCount,
+  initialLatestReviewTime,
   onComplete,
 }: SpinWheelProps) {
   const [gamePhase, setGamePhase] = useState<'intro' | 'shuffling' | 'ready' | 'playing' | 'revealing' | 'won'>('intro');
@@ -44,91 +50,62 @@ export function SpinWheel({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [shuffleOffsets, setShuffleOffsets] = useState<{ x: number; y: number; rotate: number; scale: number }[]>([]);
   const [highlightedCard, setHighlightedCard] = useState<number | null>(null);
+  const [cardOrder, setCardOrder] = useState<number[]>([0, 1, 2, 3, 4, 5]);
 
   const prizes = restaurant.prizes as Prize[];
 
-  // Créer 6 cartes
-  const cards = [
-    { ...prizes[0], id: 0 },
-    { ...prizes[1 % prizes.length], id: 1 },
-    { ...prizes[2 % prizes.length], id: 2 },
-    { ...prizes[3 % prizes.length], id: 3 },
-    { ...prizes[0], id: 4 },
-    { ...prizes[1 % prizes.length], id: 5 },
-  ];
+  // Build 6 cards from available prizes
+  const cards: (Prize & { id: number })[] = Array.from({ length: CARD_COUNT }, (_, i) => ({
+    ...prizes[i % prizes.length],
+    id: i,
+  }));
 
-  // Initialiser les offsets
-  useEffect(() => {
-    setShuffleOffsets(cards.map(() => ({ x: 0, y: 0, rotate: 0, scale: 1 })));
-  }, [cards.length]);
-
-  // Animation d'introduction spectaculaire
+  // Intro animation with shuffle
   useEffect(() => {
     const runIntroAnimation = async () => {
-      // Attendre que les cartes entrent
       await delay(800);
-
-      // Phase de shuffle épique
       setGamePhase('shuffling');
 
-      // 5 rounds de shuffle avec intensité croissante
-      for (let round = 0; round < 5; round++) {
-        const intensity = 1 + round * 0.5;
-        setShuffleOffsets(cards.map(() => ({
-          x: (Math.random() - 0.5) * 100 * intensity,
-          y: (Math.random() - 0.5) * 40 * intensity,
-          rotate: (Math.random() - 0.5) * 30 * intensity,
-          scale: 0.9 + Math.random() * 0.15,
-        })));
-        await delay(180 - round * 20);
+      // 3 random swaps
+      let order = [0, 1, 2, 3, 4, 5];
+      for (let swap = 0; swap < 3; swap++) {
+        const idx1 = Math.floor(Math.random() * CARD_COUNT);
+        let idx2 = Math.floor(Math.random() * CARD_COUNT);
+        while (idx2 === idx1) idx2 = Math.floor(Math.random() * CARD_COUNT);
+
+        const temp = order[idx1];
+        order[idx1] = order[idx2];
+        order[idx2] = temp;
+        setCardOrder([...order]);
+        await delay(800);
       }
 
-      // Rassembler au centre façon "stack"
-      setShuffleOffsets(cards.map((_, i) => ({
-        x: (i - 2.5) * 5,
-        y: 0,
-        rotate: (i - 2.5) * 2,
-        scale: 1,
-      })));
       await delay(300);
 
-      // Redistribuer en éventail
-      for (let i = 0; i < cards.length; i++) {
-        await delay(80);
-        setShuffleOffsets(prev => prev.map((offset, idx) =>
-          idx <= i ? { x: 0, y: 0, rotate: 0, scale: 1 } : offset
-        ));
-      }
-
-      await delay(200);
-
-      // Animation de highlight qui passe sur les cartes
+      // Highlight sweep
       for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < cards.length; j++) {
+        for (let j = 0; j < CARD_COUNT; j++) {
           setHighlightedCard(j);
           await delay(80);
         }
       }
       setHighlightedCard(null);
 
-      // Prêt à jouer
       setGamePhase('ready');
     };
 
     runIntroAnimation();
   }, []);
 
-  const handleCardClick = async (cardIndex: number) => {
+  const handleCardClick = async (gridIndex: number) => {
     if (gamePhase !== 'ready' || isSubmitting) return;
 
-    setSelectedCardIndex(cardIndex);
+    setSelectedCardIndex(gridIndex);
     setGamePhase('playing');
     setIsSubmitting(true);
 
     try {
-      // Appel API pour enregistrer la participation
       const response = await fetch('/api/participate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,6 +114,8 @@ export function SpinWheel({
           email: participationData.email,
           firstName: participationData.firstName,
           phone: participationData.phone,
+          initialReviewCount: initialReviewCount,
+          initialLatestReviewTime: initialLatestReviewTime,
         }),
       });
 
@@ -151,11 +130,10 @@ export function SpinWheel({
         prizeValue: data.prizeValue,
         voucherCode: data.voucherCode,
         expiresAt: data.expiresAt,
+        reviewStatus: data.reviewStatus || 'skipped',
       });
 
-      // Animation de suspense : retourner d'autres cartes d'abord
-      await revealOtherCards(cardIndex);
-
+      await revealOtherCards(gridIndex);
     } catch (err) {
       setGamePhase('ready');
       setSelectedCardIndex(null);
@@ -167,34 +145,27 @@ export function SpinWheel({
   };
 
   const revealOtherCards = async (selectedIndex: number) => {
-    // Attendre un peu
     await delay(600);
 
-    // Révéler 2-3 autres cartes progressivement (pas celle sélectionnée)
-    const otherIndices = [0, 1, 2, 3, 4, 5].filter(i => i !== selectedIndex);
-    const shuffled = otherIndices.sort(() => Math.random() - 0.5).slice(0, 3);
+    const otherIndices = Array.from({ length: CARD_COUNT }, (_, i) => i).filter(i => i !== selectedIndex);
+    const shuffled = otherIndices.sort(() => Math.random() - 0.5);
 
     for (const idx of shuffled) {
-      await delay(400);
+      await delay(300);
       setRevealedCards(prev => new Set([...prev, idx]));
     }
 
-    // Petite pause de suspense
-    await delay(1000);
+    await delay(800);
 
-    // Révéler la carte sélectionnée
     setGamePhase('revealing');
     setRevealedCards(prev => new Set([...prev, selectedIndex]));
 
-    // Attendre l'animation de retournement
     await delay(700);
 
-    // Confetti et état gagné
     setShowConfetti(true);
     setGamePhase('won');
   };
 
-  // Mettre à jour onComplete quand result change et qu'on est en état won
   useEffect(() => {
     if (gamePhase === 'won' && result) {
       const timer = setTimeout(() => {
@@ -210,7 +181,7 @@ export function SpinWheel({
         <CardContent className="py-12 text-center space-y-4">
           <div className="text-red-500 text-5xl">😕</div>
           <p className="text-lg font-medium text-red-600">{error}</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Veuillez réessayer ou contacter le restaurant.
           </p>
         </CardContent>
@@ -222,7 +193,7 @@ export function SpinWheel({
     <Card className="overflow-hidden relative">
       {showConfetti && <Confetti />}
 
-      {/* Background glow effect */}
+      {/* Background glow */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         animate={{
@@ -234,8 +205,8 @@ export function SpinWheel({
       />
 
       <CardContent className="py-8 text-center space-y-6 relative">
-        {/* Titre dynamique */}
-        <motion.div className="space-y-2" layout>
+        {/* Dynamic title */}
+        <motion.div className="space-y-2">
           <AnimatePresence mode="wait">
             <motion.h2
               key={gamePhase}
@@ -255,7 +226,7 @@ export function SpinWheel({
 
           {gamePhase === 'ready' && (
             <motion.p
-              className="text-sm text-gray-500 flex items-center justify-center gap-2"
+              className="text-sm text-muted-foreground flex items-center justify-center gap-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -266,33 +237,41 @@ export function SpinWheel({
           )}
         </motion.div>
 
-        {/* Grille de cartes */}
+        {/* Card grid — stable keys per card, layout animates swaps */}
         <div className="grid grid-cols-3 gap-3 px-2 py-4">
-          {cards.map((card, index) => (
-            <PrizeCard
-              key={card.id}
-              prize={card}
-              index={index}
-              isSelected={selectedCardIndex === index}
-              isRevealed={revealedCards.has(index)}
-              isWinningCard={selectedCardIndex === index && gamePhase === 'won'}
-              isHighlighted={highlightedCard === index}
-              actualPrize={selectedCardIndex === index && result ? {
-                value: result.prizeValue,
-                label: result.prizeLabel,
-                emoji: prizes.find(p => p.value === result.prizeValue)?.emoji || '🎁',
-                probability: 0,
-              } : card}
-              onClick={() => handleCardClick(index)}
-              disabled={gamePhase !== 'ready' || isSubmitting}
-              primaryColor={restaurant.primary_color}
-              shuffleOffset={shuffleOffsets[index] || { x: 0, y: 0, rotate: 0, scale: 1 }}
-              gamePhase={gamePhase}
-            />
-          ))}
+          {cardOrder.map((cardId, gridPosition) => {
+            const card = cards[cardId];
+            return (
+              <motion.div
+                key={`card-${cardId}`}
+                layout
+                transition={{ layout: { type: 'spring', stiffness: 150, damping: 20, mass: 0.8 } }}
+              >
+                <PrizeCard
+                  cardId={cardId}
+                  prize={card}
+                  gridPosition={gridPosition}
+                  isSelected={selectedCardIndex === gridPosition}
+                  isRevealed={revealedCards.has(gridPosition)}
+                  isWinningCard={selectedCardIndex === gridPosition && gamePhase === 'won'}
+                  isHighlighted={highlightedCard === gridPosition}
+                  actualPrize={selectedCardIndex === gridPosition && result ? {
+                    value: result.prizeValue,
+                    label: result.prizeLabel,
+                    emoji: prizes.find(p => p.value === result.prizeValue)?.emoji || '🎁',
+                    probability: 0,
+                  } : card}
+                  onClick={() => handleCardClick(gridPosition)}
+                  disabled={gamePhase !== 'ready' || isSubmitting}
+                  primaryColor={restaurant.primary_color}
+                  gamePhase={gamePhase}
+                />
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* Message de résultat */}
+        {/* Result message */}
         {gamePhase === 'won' && result && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -300,17 +279,16 @@ export function SpinWheel({
             transition={{ type: 'spring', duration: 0.6 }}
             className="space-y-3"
           >
-            <p className="text-lg text-gray-600">Vous avez gagné</p>
+            <p className="text-lg text-muted-foreground">Vous avez gagné</p>
             <motion.p
-              className="text-5xl font-black"
-              style={{ color: restaurant.primary_color }}
+              className="text-5xl font-black text-primary"
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 0.5, repeat: 2 }}
             >
               {result.prizeLabel}
             </motion.p>
             <motion.div
-              className="flex items-center justify-center gap-2 text-gray-500"
+              className="flex items-center justify-center gap-2 text-muted-foreground"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -323,7 +301,7 @@ export function SpinWheel({
 
         {gamePhase === 'playing' && (
           <motion.div
-            className="flex items-center justify-center gap-2 text-gray-500"
+            className="flex items-center justify-center gap-2 text-muted-foreground"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -336,10 +314,11 @@ export function SpinWheel({
   );
 }
 
-// Composant carte individuelle
+// Individual card component
 interface PrizeCardProps {
+  cardId: number;
   prize: Prize;
-  index: number;
+  gridPosition: number;
   isSelected: boolean;
   isRevealed: boolean;
   isWinningCard: boolean;
@@ -348,12 +327,11 @@ interface PrizeCardProps {
   onClick: () => void;
   disabled: boolean;
   primaryColor: string;
-  shuffleOffset: { x: number; y: number; rotate: number; scale: number };
   gamePhase: string;
 }
 
 function PrizeCard({
-  index,
+  gridPosition,
   isSelected,
   isRevealed,
   isWinningCard,
@@ -362,7 +340,6 @@ function PrizeCard({
   onClick,
   disabled,
   primaryColor,
-  shuffleOffset,
   gamePhase,
 }: PrizeCardProps) {
   return (
@@ -374,23 +351,19 @@ function PrizeCard({
         opacity: 1,
         y: 0,
         rotateX: 0,
-        x: shuffleOffset.x,
-        rotateZ: shuffleOffset.rotate,
-        scale: isHighlighted ? 1.1 : (isSelected ? 1.05 : shuffleOffset.scale),
+        scale: isHighlighted ? 1.1 : (isSelected ? 1.05 : 1),
       }}
       transition={{
-        opacity: { duration: 0.4, delay: index * 0.1 },
-        y: { duration: 0.5, delay: index * 0.1, type: 'spring' },
-        rotateX: { duration: 0.5, delay: index * 0.1 },
-        x: { duration: 0.15, ease: 'easeOut' },
-        rotateZ: { duration: 0.15, ease: 'easeOut' },
-        scale: { duration: 0.2 },
+        opacity: { duration: 0.4, delay: gridPosition * 0.1 },
+        y: { duration: 0.5, delay: gridPosition * 0.1, type: 'spring' },
+        rotateX: { duration: 0.5, delay: gridPosition * 0.1 },
+        scale: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
       }}
       whileHover={!disabled && gamePhase === 'ready' ? { scale: 1.08, y: -5 } : {}}
       whileTap={!disabled && gamePhase === 'ready' ? { scale: 0.95 } : {}}
       onClick={onClick}
     >
-      {/* Glow effect pour carte highlighted */}
+      {/* Glow effect */}
       {(isHighlighted || isSelected) && (
         <motion.div
           className="absolute -inset-2 rounded-2xl blur-md"
@@ -403,18 +376,11 @@ function PrizeCard({
       <motion.div
         className="relative w-full h-full"
         initial={false}
-        animate={{
-          rotateY: isRevealed ? 180 : 0,
-        }}
-        transition={{
-          duration: 0.6,
-          ease: [0.4, 0, 0.2, 1],
-        }}
-        style={{
-          transformStyle: 'preserve-3d',
-        }}
+        animate={{ rotateY: isRevealed ? 180 : 0 }}
+        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+        style={{ transformStyle: 'preserve-3d' }}
       >
-        {/* Face arrière (cachée) */}
+        {/* Back face (hidden) */}
         <div
           className="absolute inset-0 rounded-xl flex items-center justify-center shadow-lg"
           style={{
@@ -432,7 +398,7 @@ function PrizeCard({
             <span className="text-sm font-bold opacity-80">?</span>
           </div>
 
-          {/* Pattern décoratif */}
+          {/* Decorative pattern */}
           <div
             className="absolute inset-2 rounded-lg border border-white/20"
             style={{
@@ -441,12 +407,12 @@ function PrizeCard({
           />
         </div>
 
-        {/* Face avant (prix) */}
+        {/* Front face (prize) */}
         <div
           className={`absolute inset-0 rounded-xl flex flex-col items-center justify-center bg-white shadow-lg ${
             isWinningCard
               ? 'border-4 border-yellow-400 bg-gradient-to-b from-yellow-50 via-amber-50 to-orange-50'
-              : 'border-2 border-gray-100'
+              : 'border-2 border-border'
           }`}
           style={{
             backfaceVisibility: 'hidden',

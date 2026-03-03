@@ -10,6 +10,12 @@ export interface Database {
           primary_color: string;
           google_review_url: string;
           google_place_id: string | null;
+          initial_review_count: number | null;
+          user_id: string | null;
+          plan: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          confirmed_reviews_count: number;
           prizes: unknown;
           voucher_validity_days: number;
           crm_type: string;
@@ -40,6 +46,8 @@ export interface Database {
           review_clicked_at: string | null;
           review_verified: boolean;
           review_verified_at: string | null;
+          review_status: string;
+          initial_review_count: number | null;
           ip_address: string | null;
           user_agent: string | null;
           created_at: string;
@@ -63,6 +71,31 @@ export interface Database {
           "id" | "created_at"
         >;
         Update: Partial<Database["public"]["Tables"]["page_views"]["Insert"]>;
+      };
+      qr_codes: {
+        Row: {
+          id: string;
+          code: string;
+          restaurant_id: string | null;
+          name: string | null;
+          scan_count: number;
+          linked_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          code: string;
+          restaurant_id?: string | null;
+          name?: string | null;
+          scan_count?: number;
+          linked_at?: string | null;
+        };
+        Update: {
+          code?: string;
+          restaurant_id?: string | null;
+          name?: string | null;
+          scan_count?: number;
+          linked_at?: string | null;
+        };
       };
     };
   };

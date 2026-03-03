@@ -23,6 +23,7 @@ interface ResultData {
   prizeValue: number;
   voucherCode: string;
   expiresAt: string;
+  reviewStatus: 'pending' | 'verified' | 'expired' | 'skipped';
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -42,6 +43,8 @@ export function ParticipantFlow({ restaurant }: ParticipantFlowProps) {
   const [participationData, setParticipationData] =
     useState<ParticipationData | null>(null);
   const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [initialReviewCount, setInitialReviewCount] = useState<number>(-1);
+  const [initialLatestReviewTime, setInitialLatestReviewTime] = useState<number | null>(null);
 
   const handleStartClick = () => {
     setCurrentStep("form");
@@ -52,7 +55,9 @@ export function ParticipantFlow({ restaurant }: ParticipantFlowProps) {
     setCurrentStep("review");
   };
 
-  const handleReviewDone = () => {
+  const handleReviewDone = (reviewCount: number, latestReviewTime: number | null) => {
+    setInitialReviewCount(reviewCount);
+    setInitialLatestReviewTime(latestReviewTime);
     setCurrentStep("spin");
   };
 
@@ -65,10 +70,18 @@ export function ParticipantFlow({ restaurant }: ParticipantFlowProps) {
     ? hexToRgba(restaurant.primary_color, 0.06)
     : `${restaurant.primary_color}10`;
 
+  // Override la variable CSS --primary pour que toutes les classes Tailwind
+  // (bg-primary, text-primary, border-primary) utilisent la couleur du restaurant
+  const cssVars = {
+    backgroundColor: bgColor,
+    '--primary': restaurant.primary_color,
+    '--primary-foreground': '#ffffff',
+  } as React.CSSProperties;
+
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center p-4"
-      style={{ backgroundColor: bgColor }}
+      style={cssVars}
     >
       <div className="w-full max-w-md">
         {currentStep === "landing" && (
@@ -87,6 +100,8 @@ export function ParticipantFlow({ restaurant }: ParticipantFlowProps) {
           <SpinWheel
             restaurant={restaurant}
             participationData={participationData}
+            initialReviewCount={initialReviewCount}
+            initialLatestReviewTime={initialLatestReviewTime}
             onComplete={handleSpinComplete}
           />
         )}

@@ -13,9 +13,13 @@ import {
   XCircle,
   Clock,
   Ticket,
-  Loader2,
   Gift,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
 } from 'lucide-react';
+import { QRLoader } from '@/components/ui/qr-loader';
+import { InfoTooltip } from '@/components/admin/info-tooltip';
 
 interface VoucherInfo {
   id: string;
@@ -27,6 +31,7 @@ interface VoucherInfo {
   voucher_used: boolean;
   voucher_used_at: string | null;
   voucher_expires_at: string;
+  review_status: string;
   created_at: string;
 }
 
@@ -94,13 +99,27 @@ export default function VouchersPage() {
   };
 
   const isExpired = voucher && new Date(voucher.voucher_expires_at) < new Date();
+  const isReviewPending = voucher?.review_status === 'pending';
+  const isReviewExpired = voucher?.review_status === 'expired';
+  const canValidate = voucher && !voucher.voucher_used && !isExpired && !isReviewPending && !isReviewExpired;
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Validation Vouchers</h1>
-        <p className="text-gray-500 mt-1">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground">Validation Vouchers</h1>
+          <InfoTooltip
+            title="Validation en caisse"
+            description="Quand un client présente son voucher, saisissez le code ici pour le valider. Le voucher ne peut être validé que si l'avis Google a été vérifié par le système."
+            tips={[
+              "Le code voucher se trouve sur le téléphone du client",
+              "Un voucher ne peut être utilisé qu'une seule fois",
+              "Vérifiez que l'avis Google est marqué 'Vérifié' avant de valider",
+            ]}
+          />
+        </div>
+        <p className="text-muted-foreground mt-1">
           Saisissez un code voucher pour le valider en caisse
         </p>
       </div>
@@ -127,7 +146,7 @@ export default function VouchersPage() {
             />
             <Button type="submit" disabled={isSearching || !code.trim()}>
               {isSearching ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <QRLoader size={16} />
               ) : (
                 <Search className="w-4 h-4" />
               )}
@@ -139,7 +158,7 @@ export default function VouchersPage() {
 
       {/* Error message */}
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10">
           <CardContent className="py-6">
             <div className="flex items-center gap-3 text-red-600">
               <XCircle className="w-6 h-6" />
@@ -151,7 +170,7 @@ export default function VouchersPage() {
 
       {/* Voucher result */}
       {voucher && (
-        <Card className={voucher.voucher_used ? 'border-gray-300 bg-gray-50' : 'border-green-200 bg-green-50'}>
+        <Card className={voucher.voucher_used ? 'border-border' : 'border-green-200 dark:border-green-500/20 bg-green-50 dark:bg-green-500/10'}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -159,17 +178,17 @@ export default function VouchersPage() {
                 Voucher trouvé
               </CardTitle>
               {voucher.voucher_used ? (
-                <Badge className="bg-gray-200 text-gray-700">
+                <Badge className="bg-muted text-muted-foreground">
                   <CheckCircle className="w-3 h-3 mr-1" />
                   Déjà utilisé
                 </Badge>
               ) : isExpired ? (
-                <Badge className="bg-red-100 text-red-800">
+                <Badge className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400">
                   <XCircle className="w-3 h-3 mr-1" />
                   Expiré
                 </Badge>
               ) : (
-                <Badge className="bg-green-100 text-green-800">
+                <Badge className="bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400">
                   <Clock className="w-3 h-3 mr-1" />
                   Valide
                 </Badge>
@@ -179,23 +198,23 @@ export default function VouchersPage() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-500">Client</p>
-                <p className="font-semibold text-gray-900">{voucher.first_name}</p>
-                <p className="text-sm text-gray-600">{voucher.email}</p>
+                <p className="text-sm text-muted-foreground">Client</p>
+                <p className="font-semibold text-foreground">{voucher.first_name}</p>
+                <p className="text-sm text-muted-foreground">{voucher.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Code</p>
-                <code className="text-xl font-mono font-bold text-gray-900">
+                <p className="text-sm text-muted-foreground">Code</p>
+                <code className="text-xl font-mono font-bold text-foreground">
                   {voucher.voucher_code}
                 </code>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Réduction</p>
+                <p className="text-sm text-muted-foreground">Réduction</p>
                 <p className="text-2xl font-bold text-primary">{voucher.prize_label}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Expire le</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">Expire le</p>
+                <p className="font-medium text-foreground">
                   {new Date(voucher.voucher_expires_at).toLocaleDateString('fr-FR', {
                     day: 'numeric',
                     month: 'long',
@@ -203,11 +222,31 @@ export default function VouchersPage() {
                   })}
                 </p>
               </div>
+              <div className="col-span-2">
+                <p className="text-sm text-muted-foreground">Avis Google</p>
+                {voucher.review_status === 'verified' ? (
+                  <p className="font-medium text-green-600 flex items-center gap-1">
+                    <ShieldCheck className="w-4 h-4" /> Vérifié
+                  </p>
+                ) : voucher.review_status === 'pending' ? (
+                  <p className="font-medium text-amber-600 flex items-center gap-1">
+                    <ShieldAlert className="w-4 h-4" /> En attente de vérification
+                  </p>
+                ) : voucher.review_status === 'expired' ? (
+                  <p className="font-medium text-red-600 flex items-center gap-1">
+                    <ShieldX className="w-4 h-4" /> Non déposé à temps
+                  </p>
+                ) : (
+                  <p className="font-medium text-muted-foreground flex items-center gap-1">
+                    Non requis
+                  </p>
+                )}
+              </div>
             </div>
 
             {voucher.voucher_used && voucher.voucher_used_at && (
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-500">
+              <div className="pt-4 border-t border-border">
+                <p className="text-sm text-muted-foreground">
                   Utilisé le{' '}
                   {new Date(voucher.voucher_used_at).toLocaleDateString('fr-FR', {
                     day: 'numeric',
@@ -221,15 +260,22 @@ export default function VouchersPage() {
             )}
 
             {!voucher.voucher_used && !isExpired && (
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-border space-y-2">
+                {(isReviewPending || isReviewExpired) && (
+                  <p className="text-sm text-amber-600 text-center">
+                    {isReviewPending
+                      ? "Le voucher ne peut pas être validé tant que l'avis Google n'est pas vérifié."
+                      : "Le voucher ne peut pas être validé car l'avis Google n'a pas été déposé à temps."}
+                  </p>
+                )}
                 <Button
                   onClick={handleValidate}
-                  disabled={isValidating}
+                  disabled={isValidating || !canValidate}
                   className="w-full h-12 text-lg"
                   size="lg"
                 >
                   {isValidating ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    <QRLoader size={20} className="mr-2" />
                   ) : (
                     <CheckCircle className="w-5 h-5 mr-2" />
                   )}

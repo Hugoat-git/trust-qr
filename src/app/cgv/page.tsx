@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Conditions Générales de Vente',
-  description: 'CGV de QR Fidélité',
+  description: 'CGV de TrustQR',
 };
 
 export default function CGVPage() {
@@ -26,12 +26,12 @@ export default function CGVPage() {
           <h2>Article 1 - Objet</h2>
           <p>
             Les présentes conditions générales de vente régissent les relations
-            contractuelles entre QR Fidélité et ses clients professionnels
+            contractuelles entre TrustQR et ses clients professionnels
             (restaurants, commerces).
           </p>
 
           <h2>Article 2 - Services proposés</h2>
-          <p>QR Fidélité propose les services suivants :</p>
+          <p>TrustQR propose les services suivants :</p>
           <ul>
             <li>Pack Essentiel : Solution de fidélisation avec QR code générique</li>
             <li>Pack Pro : Solution avec QR codes personnalisés</li>
@@ -71,7 +71,7 @@ export default function CGVPage() {
 
           <h2>Article 7 - Responsabilité</h2>
           <p>
-            QR Fidélité s'engage à fournir un service de qualité mais ne peut
+            TrustQR s'engage à fournir un service de qualité mais ne peut
             être tenu responsable des dommages indirects liés à l'utilisation du
             service.
           </p>
@@ -84,7 +84,7 @@ export default function CGVPage() {
 
           <h2>Article 9 - Modification des CGV</h2>
           <p>
-            QR Fidélité se réserve le droit de modifier les présentes CGV. Les
+            TrustQR se réserve le droit de modifier les présentes CGV. Les
             clients seront informés par email de toute modification.
           </p>
 

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://qr-fidelite.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://trustqr.dev';
 
   // Pages statiques
   const staticPages: MetadataRoute.Sitemap = [

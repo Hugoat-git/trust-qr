@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Mentions légales',
-  description: 'Mentions légales de QR Fidélité',
+  description: 'Mentions légales de TrustQR',
 };
 
 export default function MentionsLegalesPage() {
@@ -21,7 +21,7 @@ export default function MentionsLegalesPage() {
         <div className="prose prose-gray max-w-none">
           <h2>Éditeur du site</h2>
           <p>
-            QR Fidélité<br />
+            TrustQR<br />
             [Votre adresse]<br />
             [Votre email de contact]<br />
             [Votre numéro SIRET]
