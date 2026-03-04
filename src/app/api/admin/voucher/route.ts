@@ -22,6 +22,7 @@ interface ParticipantCheck {
   voucher_used: boolean;
   voucher_expires_at: string;
   review_status: string;
+  restaurant_id: string;
 }
 
 // GET - Rechercher un voucher par code
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Récupérer le restaurant
     const { data: restaurantData, error: restaurantError } = await supabaseAdmin
       .from('restaurants')
-      .select('id')
+      .select('id, user_id')
       .eq('slug', slug)
       .single();
 
@@ -55,7 +56,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const restaurant = restaurantData as { id: string };
+    const restaurant = restaurantData as { id: string; user_id: string };
+
+    // Verify the authenticated user owns this restaurant
+    if (restaurant.user_id !== user.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
 
     // Rechercher le voucher
     const { data: participantData, error: participantError } = await supabaseAdmin
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Vérifier que le voucher existe et n'est pas déjà utilisé
     const { data: participantData, error: fetchError } = await supabaseAdmin
       .from('participants')
-      .select('id, voucher_used, voucher_expires_at, review_status')
+      .select('id, voucher_used, voucher_expires_at, review_status, restaurant_id')
       .eq('id', voucherId)
       .single();
 
@@ -115,6 +121,18 @@ export async function POST(request: NextRequest) {
     }
 
     const participant = participantData as ParticipantCheck;
+
+    // Verify the authenticated user owns the restaurant this voucher belongs to
+    const { data: restaurantOwner } = await supabaseAdmin
+      .from('restaurants')
+      .select('user_id')
+      .eq('id', participant.restaurant_id)
+      .single();
+
+    // biome-ignore lint/suspicious/noExplicitAny: restaurant type mismatch
+    if (!restaurantOwner || (restaurantOwner as any).user_id !== user.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
 
     if (participant.voucher_used) {
       return NextResponse.json(

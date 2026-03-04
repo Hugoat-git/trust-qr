@@ -255,7 +255,7 @@ export function DashboardClient({
     <div className="space-y-5">
 
       {showUpgradePopup && (
-        <UpgradePopup restaurantName={restaurantName} confirmedReviews={confirmedReviewsCount} />
+        <UpgradePopup restaurantId={restaurantId} restaurantName={restaurantName} confirmedReviews={confirmedReviewsCount} />
       )}
 
       {/* ===== ROW 0: Hero — Reviews Before/After + Voucher Check ===== */}

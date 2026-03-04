@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       .from('restaurants')
       .select('id, name, logo_url, google_review_url, primary_color')
       .eq('slug', slug)
+      .eq('user_id', user.id)
       .single();
 
     if (error || !data) {
@@ -73,16 +74,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current restaurant to check if this is first activation
+    // Get current restaurant to check ownership and activation status
     const response = await supabaseAdmin
       .from('restaurants')
-      .select('is_active, slug, google_place_id, initial_review_count')
+      .select('is_active, slug, google_place_id, initial_review_count, user_id')
       .eq('id', restaurantId)
       .single();
 
     // biome-ignore lint/suspicious/noExplicitAny: Supabase type inference workaround
     const currentRestaurant = response.data as any;
-    const wasInactive = currentRestaurant && !currentRestaurant.is_active;
+
+    // Verify the authenticated user owns this restaurant
+    if (!currentRestaurant || currentRestaurant.user_id !== user.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+
+    const wasInactive = !currentRestaurant.is_active;
 
     // Use manual override if provided, otherwise auto-detect from review URL/name
     let googlePlaceId: string | null = null;

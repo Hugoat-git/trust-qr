@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { LogIn } from 'lucide-react';
+import { LogIn, Mail } from 'lucide-react';
 import { QRLoader } from '@/components/ui/qr-loader';
 import { TrustQRLogo } from '@/components/ui/trustqr-logo';
 
@@ -16,6 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/admin';
+  const isRegistered = searchParams.get('registered') === 'true';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,7 +57,17 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      {isRegistered && (
+        <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 p-3 text-sm text-blue-800 dark:text-blue-300 mb-4">
+          <Mail className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            Un email de confirmation vous a été envoyé.{' '}
+            <strong>Si vous ne le recevez pas dans quelques minutes, vérifiez vos spams.</strong>
+          </span>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -90,6 +101,7 @@ function LoginForm() {
         Se connecter
       </Button>
     </form>
+    </>
   );
 }
 

@@ -3,7 +3,7 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "npx biome format --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
+        "command": "./node_modules/.bin/biome format --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
       }
     ],
     "PreToolUse": [

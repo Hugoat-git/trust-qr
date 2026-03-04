@@ -6,6 +6,17 @@ import { getAuthUser } from '@/lib/auth';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const qrTable = () => supabaseAdmin.from('qr_codes') as any;
 
+// Helper: verify a user owns a restaurant
+async function userOwnsRestaurant(userId: string, restaurantId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from('restaurants')
+    .select('user_id')
+    .eq('id', restaurantId)
+    .single();
+  // biome-ignore lint/suspicious/noExplicitAny: restaurant type mismatch
+  return !!data && (data as any).user_id === userId;
+}
+
 // GET: List QR codes for a restaurant
 export async function GET(request: NextRequest) {
   const user = await getAuthUser();
@@ -16,6 +27,10 @@ export async function GET(request: NextRequest) {
 
   if (!restaurantId) {
     return NextResponse.json({ error: 'restaurantId requis' }, { status: 400 });
+  }
+
+  if (!(await userOwnsRestaurant(user.id, restaurantId))) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
   const { data, error } = await qrTable()
@@ -40,6 +55,10 @@ export async function POST(request: NextRequest) {
 
   if (!restaurantId || !code) {
     return NextResponse.json({ error: 'restaurantId et code requis' }, { status: 400 });
+  }
+
+  if (!(await userOwnsRestaurant(user.id, restaurantId))) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
   const upperCode = code.toUpperCase();
@@ -99,6 +118,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'qrCodeId requis' }, { status: 400 });
   }
 
+  // Verify ownership via the QR code's restaurant
+  const { data: qrCheck } = await qrTable().select('restaurant_id').eq('id', qrCodeId).single();
+  if (!qrCheck?.restaurant_id || !(await userOwnsRestaurant(user.id, qrCheck.restaurant_id))) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+  }
+
   const { data, error } = await qrTable()
     .update({ name: name || null })
     .eq('id', qrCodeId)
@@ -122,6 +147,12 @@ export async function DELETE(request: NextRequest) {
 
   if (!qrCodeId) {
     return NextResponse.json({ error: 'qrCodeId requis' }, { status: 400 });
+  }
+
+  // Verify ownership via the QR code's restaurant
+  const { data: qrCheck } = await qrTable().select('restaurant_id').eq('id', qrCodeId).single();
+  if (!qrCheck?.restaurant_id || !(await userOwnsRestaurant(user.id, qrCheck.restaurant_id))) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
   const { error } = await qrTable()

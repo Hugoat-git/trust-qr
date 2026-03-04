@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LogoUpload } from '@/components/ui/logo-upload';
+import { LogoutButton } from '@/components/admin/logout-button';
 import { toast } from 'sonner';
 import { Save, Palette, Link as LinkIcon, Clock, Gift, Search, CheckCircle2, AlertCircle, Building2, LogOut, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -628,6 +629,22 @@ export function SettingsForm({ restaurant }: SettingsFormProps) {
           )}
         </Button>
       </div>
+
+      {/* Compte */}
+      <Card className="border-red-200 dark:border-red-900/50">
+        <CardHeader>
+          <CardTitle className="text-base text-red-600 dark:text-red-400 flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            Compte
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            Vous déconnecter de votre session administrateur.
+          </p>
+          <LogoutButton variant="destructive" size="sm" className="shrink-0" />
+        </CardContent>
+      </Card>
 
       {/* GBP Error Dialog */}
       <Dialog open={gbpErrorDialog} onOpenChange={setGbpErrorDialog}>

@@ -104,9 +104,8 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      console.error('Insert error details:', JSON.stringify(insertError, null, 2));
       return NextResponse.json(
-        { error: `Erreur lors de l'enregistrement: ${insertError.message || insertError.code || 'unknown'}` },
+        { error: 'Erreur lors de l\'enregistrement' },
         { status: 500 }
       );
     }

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
+import { LogoutButton } from '@/components/admin/logout-button';
 import Link from 'next/link';
 import { ChevronRight, Store, Plus } from 'lucide-react';
 
@@ -24,22 +25,29 @@ export default async function AdminIndexPage() {
     redirect('/admin/login');
   }
 
-  // Récupérer tous les restaurants (pour l'instant tous, plus tard on filtrera par user)
   const { data } = await supabaseAdmin
     .from('restaurants')
     .select('id, name, slug, logo_url, is_active')
+    .eq('user_id', user.id)
     .order('name');
 
   const restaurants = (data || []) as RestaurantData[];
 
+  if (restaurants.length === 0) {
+    redirect('/admin/new');
+  }
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Mes restaurants</h1>
-          <p className="text-muted-foreground mt-1">
-            Sélectionnez un restaurant pour accéder à son tableau de bord
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Mes restaurants</h1>
+            <p className="text-muted-foreground mt-1">
+              Sélectionnez un restaurant pour accéder à son tableau de bord
+            </p>
+          </div>
+          <LogoutButton variant="outline" size="sm" className="shrink-0 mt-1" />
         </div>
 
         <div className="grid gap-4">

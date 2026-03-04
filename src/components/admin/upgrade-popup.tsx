@@ -13,6 +13,7 @@ import { QRLoader } from "@/components/ui/qr-loader";
 import { ShieldCheck, Pause } from "lucide-react";
 
 interface UpgradePopupProps {
+	restaurantId: string;
 	restaurantName: string;
 	confirmedReviews: number;
 }
@@ -99,6 +100,7 @@ function ProgressBar({ current }: { current: number }) {
 }
 
 export function UpgradePopup({
+	restaurantId,
 	restaurantName,
 	confirmedReviews,
 }: UpgradePopupProps) {
@@ -112,6 +114,8 @@ export function UpgradePopup({
 		try {
 			const response = await fetch("/api/stripe/checkout", {
 				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ restaurantId }),
 			});
 			if (!response.ok) throw new Error("checkout failed");
 			const data = await response.json();

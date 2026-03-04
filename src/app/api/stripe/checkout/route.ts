@@ -7,7 +7,7 @@ function getStripe() {
 	return new Stripe(process.env.STRIPE_SECRET_KEY!);
 }
 
-export async function POST() {
+export async function POST(req: Request) {
 	try {
 		const stripe = getStripe();
 		const user = await getAuthUser();
@@ -15,10 +15,18 @@ export async function POST() {
 			return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 		}
 
-		// Récupérer le restaurant du user
+		const body = await req.json();
+		const { restaurantId } = body as { restaurantId?: string };
+
+		if (!restaurantId) {
+			return NextResponse.json({ error: "restaurantId manquant" }, { status: 400 });
+		}
+
+		// Récupérer le restaurant et vérifier l'ownership
 		const { data: restaurant, error } = await supabaseAdmin
 			.from("restaurants")
 			.select("id, slug, name, stripe_customer_id")
+			.eq("id", restaurantId)
 			.eq("user_id", user.id)
 			.single();
 

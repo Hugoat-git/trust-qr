@@ -37,6 +37,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) infinite linear;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -154,6 +156,16 @@
 .card-hover:hover {
   border-color: rgba(181, 89, 51, 0.15);
   box-shadow: 0 0 0 1px rgba(181, 89, 51, 0.05);
+}
+
+/* ===== Marquee animations (MagicUI) ===== */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap))); }
+}
+@keyframes marquee-vertical {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(-100% - var(--gap))); }
 }
 
 /* ===== Shimmer animation for participant review banner ===== */
